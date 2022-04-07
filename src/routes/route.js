@@ -4,6 +4,9 @@ const urlController=require("../controller/urlController")
 
 
 
+
+
+
 router.post("/urlShortner",urlController.createurl)
 router.get("/:urlCode",urlController.geturl)
 
