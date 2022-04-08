@@ -21,8 +21,6 @@ redisClient.on("connect", async function () {
 const SET_ASYNC = promisify(redisClient.SET).bind(redisClient);
 const GET_ASYNC = promisify(redisClient.GET).bind(redisClient);
 
-
-
 //validation functions
 const isValid = function (value) {
     if (typeof (value) === 'undefined' || typeof (value) === 'null') { return false }
@@ -71,7 +69,7 @@ const createurl = async function (req, res) {
         let checkforUrl = await GET_ASYNC(`${longUrl}`)
 
         if (checkforUrl) {
-            return res.status(200).send({ status: true, "data": JSON.parse(checkforUrl) })//---if already exist
+            return res.status(200).send({ status: true,msg:"recived from Cache",data: JSON.parse(checkforUrl) })//---if already exist
         }
 
         //if data not found in caches find in MongoDb
@@ -79,7 +77,7 @@ const createurl = async function (req, res) {
         let url = await urlModel.findOne({ longUrl })
 
         if (url) {
-            return res.status(200).send({ status: true, "data": url }) //---if already exist
+            return res.status(200).send({ status: true, data: url }) //---if already exist
         }
         //---GENERATE DATA BY LONG URL
         const shortUrl = baseUrl + '/' + urlCode
@@ -94,7 +92,7 @@ const createurl = async function (req, res) {
         let data = ({ longurl, shorturl, urlcode })
 
         //---SET GENERATE DATA IN CACHE
-        await SET_ASYNC(`${longUrl}`, JSON.stringify(newurl))
+        await SET_ASYNC(`${longUrl}`, JSON.stringify(data))
 
         return res.status(201).send({ status: true, msg: `URL created successfully`, data: data });
 
@@ -107,17 +105,18 @@ const createurl = async function (req, res) {
 const geturl = async function (req, res) {
     try {
         const urlCode = req.params.urlCode.trim()
+
         if (!isValid(urlCode)) {
             res.status(400).send({ status: false, message: 'Please provide valid urlCode' })
         }
 
         let checkforUrl = await GET_ASYNC(`${urlCode}`)    //check in cache
         if (checkforUrl) {
-            return res.redirect(302, JSON.parse(checkforUrl))
+            return res.status(302).redirect( JSON.parse(checkforUrl))
+            
         }
-
-
-        const url = await urlModel.findOne({ urlCode: urlCode })   //check in Db
+        
+    const url = await urlModel.findOne({ urlCode: urlCode })   //check in Db
 
         if (!url) {
             return res.status(404).send({ status: false, message: 'No URL Found' })
